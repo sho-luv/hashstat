@@ -14,8 +14,11 @@ from collections import Counter
 ############################################
 # by Leon Johnson
 #
-# This is a template to start programs
-# by using the argparse as a starting point
+# This is a program to parse pwdump files
+# and extract stats on the NT and LM password
+# hashes. Also if john was used to crack
+# passwords, this program will give stats
+# on cracked passwords using john the ripper
 #
 # Debuging:
 #       python -m pdb program.py
@@ -27,8 +30,12 @@ from collections import Counter
 # [x] identify # of NT hashes
 # [x] identify # of reused NT hashes
 # [x] identify # of reused LM hashes
-# [ ] identify # of domain admin accounts that has password reuse
+# [ ] show cracked passwords using john
+# [ ] identify # of domain admin accounts that reuse password
 # [ ] identify # domain admins with LM hashes
+# [ ] add pivot table to list all users that share password
+# [ ] add html output option
+# [ ] add formating aligning text and numbers with .format() t.ly/upn8
 
 # ----------------------------------
 # Colors
@@ -75,6 +82,7 @@ SSS    S*S  SSS    S*S  YSS'    SSS    S*S  YSS'         S*S       SSS    S*S   
 parser = argparse.ArgumentParser(description='Program discreption.')
 parser.add_argument('ntds', action='store', metavar='ntds file', help="Submit ntds.dit file in pwdump format: domain\\user:rid:lmhash:nthash:::")
 parser.add_argument("-t", "--top", action="store_true", help="show top ten hashes used")
+parser.add_argument("-d", "--domain", action="store_true", help="show all domains found")
 parser.add_argument("-c", "--cracked", action='store_true', help='show top ten')
 parser.add_argument("-lm", action='store_true', help='show top ten')
 parser.add_argument("-nt", action='store_true', help='show top ten')
@@ -100,12 +108,14 @@ def main():
         nt_hashes = []
         lm_hashes = []
         ntds = []
+        domain = False
         top_hash = False
         top_cracked = False
         filename = ""
         file_data = ""
 
     my_ntds = ntds()
+    my_ntds.domain = options.domain
     my_ntds.top_hash = options.top
     my_ntds.top_cracked = options.cracked
     my_ntds.filename = options.ntds
@@ -122,14 +132,16 @@ def main():
     x.close()
 
     # parse data add to struct
-    get_ntds(my_ntds)
+    parse_ntds(my_ntds)
 
-    print(CYAN+"\nThe following are statistics based on the file provided\n"+NOCOLOR)
+    print(CYAN+"\nThe following are statistics based on the file provided"+NOCOLOR)
+    print(CYAN+"These statistics exclude machine accounts."+NOCOLOR)
     print_ntds_stats(my_ntds)
 
-def get_ntds(ntds):
+def parse_ntds(ntds):
     for line in ntds.file_data:
         if re.search(":::", line):
+            # we remove machine accounts on this line
             if not re.search("\$",line):
                 x = line.split(":")
                 ntds.usernames.append(x[0])
@@ -142,9 +154,9 @@ def get_ntds(ntds):
 
 def print_ntds_stats(ntds):
 
-    if False:
-    #if ntds.nt_hashes:
-        print(LIGHTGREEN+"[+] "+NOCOLOR, end = '')
+    # NT Password Hashes Breakdown #==================================================
+    if ntds.nt_hashes:
+        print(LIGHTGREEN+"\n[+] "+NOCOLOR, end = '')
         print("Total NT hashes:",end='')
         print(RED,len(ntds.nt_hashes),NOCOLOR)
 
@@ -161,12 +173,22 @@ def print_ntds_stats(ntds):
         print(RED,nt_total,NOCOLOR)
         print()
 
+        if ntds.domain:
+            print("Domain shit")
+
+        # NT Top Hashes Breakdown #===================================================
         if ntds.top_hash:
             print()
             print(GREEN,"Top Ten duplicate NT hashes:",NOCOLOR)
             print(YELLOW+"-------------------------------------------------"+NOCOLOR)
             print_top_ten(stats, len(ntds.nt_hashes))
 
+        # NT Passwords Cracked Hashes Breakdown #=====================================
+        if ntds.top_cracked:
+            #print("Trying to see Cracked shit!")
+            cracked_hash_stats(ntds.nt_hashes,"nt",ntds.filename)
+
+    # LM Password Hashes Breakdown #==================================================
     if ntds.lm_hashes:
         print(LIGHTGREEN+"[+] "+NOCOLOR, end='')
         print("Total LM hashes:",end='')
@@ -180,7 +202,7 @@ def print_ntds_stats(ntds):
         stats, lm_total, lm_max = get_top_ten_reused_hashes(ntds.lm_hashes)
 
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
-        print("Most reused NT hash was used:",end='')
+        print("Most reused LM hash was used:",end='')
         print(RED,lm_max,NOCOLOR)
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
         print("Total # of duplicate LM hashes:",end='')
@@ -228,7 +250,7 @@ def cracked_hash_stats(hashes, type_hash, filename):
     # create lists of domains, passwords, and dups from list of
     # stings that look like this: "domain\user:pass:id:lm:nt:::"
     for item in john_cracked:
-        #print(item)
+        print(item)
         if '\\' not in item:
             domain = item.split('\\', 1)[0]
         else:
@@ -274,8 +296,7 @@ def print_top_ten(my_list, total):
     print()
 
 def get_top_ten_reused_hashes(my_list): 
-
-    freq = {}
+    freq = {}   # unordered, no dups set of items
     stats = []
     for item in my_list:
         if (item in freq):
@@ -284,6 +305,10 @@ def get_top_ten_reused_hashes(my_list):
             freq[item] = 1
 
     freq = {key:val for key, val in freq.items() if val != 1}
+
+    # working leon
+    # print(type(freq)) # error checking
+    print("my_list value:", my_list)
 
     hashTotal = sum(freq.values())
     hashMax = max(freq.values())
