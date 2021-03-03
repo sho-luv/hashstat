@@ -10,7 +10,6 @@ from tabulate import tabulate
 from operator import itemgetter
 from collections import Counter
 
-
 ############################################
 # by Leon Johnson
 #
@@ -30,6 +29,7 @@ from collections import Counter
 # [x] identify # of NT hashes
 # [x] identify # of reused NT hashes
 # [x] identify # of reused LM hashes
+# [ ] fix the removal of machine accounts $
 # [ ] show cracked passwords using john
 # [ ] identify # of domain admin accounts that reuse password
 # [ ] identify # domain admins with LM hashes
@@ -82,7 +82,7 @@ SSS    S*S  SSS    S*S  YSS'    SSS    S*S  YSS'         S*S       SSS    S*S   
 parser = argparse.ArgumentParser(description='Program discreption.')
 parser.add_argument('ntds', action='store', metavar='ntds file', help="Submit ntds.dit file in pwdump format: domain\\user:rid:lmhash:nthash:::")
 parser.add_argument("-t", "--top", action="store_true", help="show top ten hashes used")
-parser.add_argument("-d", "--domain", action="store_true", help="show all domains found")
+parser.add_argument("-d", "--details", action="store_true", help="show all details found")
 parser.add_argument("-c", "--cracked", action='store_true', help='show top ten')
 parser.add_argument("-lm", action='store_true', help='show top ten')
 parser.add_argument("-nt", action='store_true', help='show top ten')
@@ -108,14 +108,14 @@ def main():
         nt_hashes = []
         lm_hashes = []
         ntds = []
-        domain = False
+        details = False
         top_hash = False
         top_cracked = False
         filename = ""
         file_data = ""
 
     my_ntds = ntds()
-    my_ntds.domain = options.domain
+    my_ntds.details = options.details
     my_ntds.top_hash = options.top
     my_ntds.top_cracked = options.cracked
     my_ntds.filename = options.ntds
@@ -173,12 +173,8 @@ def print_ntds_stats(ntds):
         print(RED,nt_total,NOCOLOR)
         print()
 
-        if ntds.domain:
-            print("Domain shit")
-
         # NT Top Hashes Breakdown #===================================================
         if ntds.top_hash:
-            print()
             print(GREEN,"Top Ten duplicate NT hashes:",NOCOLOR)
             print(YELLOW+"-------------------------------------------------"+NOCOLOR)
             print_top_ten(stats, len(ntds.nt_hashes))
@@ -207,6 +203,7 @@ def print_ntds_stats(ntds):
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
         print("Total # of duplicate LM hashes:",end='')
         print(RED,lm_total,NOCOLOR)
+        print()
 
         if ntds.top_hash:
             print(GREEN,"Top Ten duplicate LM hashes:",NOCOLOR)
@@ -250,9 +247,14 @@ def cracked_hash_stats(hashes, type_hash, filename):
     # create lists of domains, passwords, and dups from list of
     # stings that look like this: "domain\user:pass:id:lm:nt:::"
     for item in john_cracked:
-        print(item)
+        # debugging
+        # print(item)
         if '\\' not in item:
-            domain = item.split('\\', 1)[0]
+            domain = ""
+            username, password, rid, lm, nt = item.split(':', 4)
+            passwords.append(password)
+            if username.lower() == password.lower():
+                dups.append(username)
         else:
             domain,single_hash = item.split('\\', 1)
             username, password, rid, lm, nt = single_hash.split(':', 4)
@@ -260,7 +262,7 @@ def cracked_hash_stats(hashes, type_hash, filename):
             if username.lower() == password.lower():
                 dups.append(username)
 
-        domains.append( domain.lower() )
+    domains.append( domain.lower() )
 
     # clean domains list
     # delete duplicate list items
@@ -292,6 +294,8 @@ def cracked_hash_stats(hashes, type_hash, filename):
 def print_top_ten(my_list, total):
     for x,y in my_list:
         percentage = (float(x) / total)
+        if y == "":
+            y = "*BLANK*"
         print(YELLOW,y,"=",x,"("+"{:.2%}".format(percentage)+")",NOCOLOR)
     print()
 
@@ -308,7 +312,7 @@ def get_top_ten_reused_hashes(my_list):
 
     # working leon
     # print(type(freq)) # error checking
-    print("my_list value:", my_list)
+    # print("my_list value:", my_list)
 
     hashTotal = sum(freq.values())
     hashMax = max(freq.values())
