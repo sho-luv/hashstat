@@ -19,8 +19,4 @@
 	grep 72330c3958e55d692d063d366207738a sam.script | wc
 
 	
-	Check Zoom Meeting:
-	curl -i -s -k -X $'GET' \
-    -H $'Host: rapid7.zoom.us' -H $'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0' -H $'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H $'Accept-Language: en-US,en;q=0.5' -H $'Accept-Encoding: gzip, deflate' -H $'Referer: https://rapid7.zoom.us/join' -H $'Connection: close' -H $'Cookie: cred=D8059F437B77732E130A38F1F34C980F; _zm_page_auth=aw1_c_ICNF8jDURPinndYiqN3Tlw; _zm_ssid=aw1_c_6KVXaKKXRTqTzmug6hYd5A; _zm_ctaid=2ajbr3t3Q7i7cEfO6juaFA.1585852866909.fc083a21ae16b4212c83fc93f9916987; _zm_chtaid=271; _zm_currency=USD; _zm_mtk_guid=a6fe58a2a94845c0b1131fd718f5b5e1; _zm_lang=en-US; _zm_client_tz=America/Los_Angeles; _zm_cdn_blocked=unlog_unblk; _ga=GA1.2.805798768.1585852868; _gid=GA1.2.724766683.1585852868; notice_behavior=implied,eu; notice_preferences=2:; notice_gdpr_prefs=0,1,2:; cmapi_gtm_bl=; cmapi_cookie_privacy=permit 1,2,3; slireg=https://scout.us1.salesloft.com; sliguid=7007ae13-afb8-4860-ba7f-ec188a03637d; slirequested=true; _hjid=e502f3d4-e61d-494d-b39b-4fec4e96b69f' -H $'Upgrade-Insecure-Requests: 1' \
-    -b $'cred=D8059F437B77732E130A38F1F34C980F; _zm_page_auth=aw1_c_ICNF8jDURPinndYiqN3Tlw; _zm_ssid=aw1_c_6KVXaKKXRTqTzmug6hYd5A; _zm_ctaid=2ajbr3t3Q7i7cEfO6juaFA.1585852866909.fc083a21ae16b4212c83fc93f9916987; _zm_chtaid=271; _zm_currency=USD; _zm_mtk_guid=a6fe58a2a94845c0b1131fd718f5b5e1; _zm_lang=en-US; _zm_client_tz=America/Los_Angeles; _zm_cdn_blocked=unlog_unblk; _ga=GA1.2.805798768.1585852868; _gid=GA1.2.724766683.1585852868; notice_behavior=implied,eu; notice_preferences=2:; notice_gdpr_prefs=0,1,2:; cmapi_gtm_bl=; cmapi_cookie_privacy=permit 1,2,3; slireg=https://scout.us1.salesloft.com; sliguid=7007ae13-afb8-4860-ba7f-ec188a03637d; slirequested=true; _hjid=e502f3d4-e61d-494d-b39b-4fec4e96b69f' \
-    $'https://rapid7.zoom.us/j/2333341692'
+
