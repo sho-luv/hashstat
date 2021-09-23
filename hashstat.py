@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import re
 import csv
@@ -29,8 +29,8 @@ from collections import Counter
 # [x] identify # of NT hashes
 # [x] identify # of reused NT hashes
 # [x] identify # of reused LM hashes
-# [ ] fix the removal of machine accounts $
-# [ ] show cracked passwords using john
+# [x] fix the removal of machine accounts $
+# [x] show cracked passwords using john
 # [ ] identify # of domain admin accounts that reuse password
 # [ ] identify # domain admins with LM hashes
 # [ ] add pivot table to list all users that share password
@@ -134,7 +134,7 @@ def main():
     # parse data add to struct
     parse_ntds(my_ntds)
 
-    print(CYAN+"\nThe following are statistics based on the file provided"+NOCOLOR)
+    print(CYAN+"\nThe are the statistics based on the pwdump file"+NOCOLOR)
     print(CYAN+"These statistics exclude machine accounts."+NOCOLOR)
     print_ntds_stats(my_ntds)
 
@@ -150,7 +150,7 @@ def parse_ntds(ntds):
                     ntds.lm_hashes.append(x[2])
                 ntds.nt_hashes.append(x[3])
                 # t.ly/YmZgE
-                ntds.ntds.append({"user":x[0], "rid":x[1], "lm":x[2], "nt":x[3]})
+                #ntds.ntds.append({"user":x[0], "rid":x[1], "lm":x[2], "nt":x[3]})
 
 def print_ntds_stats(ntds):
 
@@ -187,18 +187,34 @@ def print_ntds_stats(ntds):
     # LM Password Hashes Breakdown #==================================================
     if ntds.lm_hashes:
         print(LIGHTGREEN+"[+] "+NOCOLOR, end='')
-        print("Total LM hashes:",end='')
+        print("Total accounts with LM hashes:",end='')
         print(RED,len(ntds.lm_hashes),NOCOLOR)
 
+        lm_total = []
+        
+        for s in ntds.lm_hashes:
+            s1 = s[:len(s)//2]
+            s2 = s[len(s)//2:]
+            lm_total += [s1]
+            lm_total += [s2]
+            myset = set(lm_total)
+            #myset.remove("aad3b435b51404ee")
+            myset = set(ntds.lm_hashes)
+
+        # Printing output
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
-        print("Total unique LM hashes:",end='')
+        print("Total LM hashes:",end='')
+        print(RED,len(list(set(myset))),NOCOLOR)
+
+        print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
+        print("Total unique LM hash passwords:",end='')
         print(RED,len(list(set(ntds.lm_hashes))),NOCOLOR)
 
         # pipal style get dup values of list
         stats, lm_total, lm_max = get_top_ten_reused_hashes(ntds.lm_hashes)
 
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
-        print("Most reused LM hash was used:",end='')
+        print("Most reused LM hash password was used:",end='')
         print(RED,lm_max,NOCOLOR)
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
         print("Total # of duplicate LM hashes:",end='')
@@ -262,13 +278,10 @@ def cracked_hash_stats(hashes, type_hash, filename):
             if username.lower() == password.lower():
                 dups.append(username)
 
-    domains.append( domain.lower() )
+            domains.append( domain.lower() )
 
-    # clean domains list
     # delete duplicate list items
-    domains = list(OrderedDict.fromkeys(domains))
-    # delte items in list that didn't have domain\ in them
-    domains = [x for x in domains if ':::' not in x]
+    domains = set(domains)
 
     # My own python pipal sort and count list values
     pw_stats, pw_total, pw_max = get_top_ten_reused_hashes(passwords)
@@ -294,8 +307,8 @@ def cracked_hash_stats(hashes, type_hash, filename):
 def print_top_ten(my_list, total):
     for x,y in my_list:
         percentage = (float(x) / total)
-        if y == "":
-            y = "*BLANK*"
+        if y == ""or y == "31d6cfe0d16ae931b73c59d7e0c089c0":
+            y = "*BLANK HASH*"
         print(YELLOW,y,"=",x,"("+"{:.2%}".format(percentage)+")",NOCOLOR)
     print()
 
