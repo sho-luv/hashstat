@@ -323,11 +323,17 @@ def get_top_ten_reused_hashes(my_list):
         else:
             freq[item] = 1
 
+    # only count duplicate values
     hashTotalDups = 0
-
-    for x in freq.values():
-        if x != 1:
-            hashTotalDups += x
+    blank_hash = 0
+    for key in freq:
+        if freq[key] != 1:
+            # get count of blank hashes to subtract from total dup hashes
+            if key.lower() == "31d6cfe0d16ae931b73c59d7e0c089c0":
+                blank_hash = freq[key]
+            elif key.lower() == "aad3b435b51404eeaad3b435b51404ee":
+                blank_hash += freq[key]
+            hashTotalDups += freq[key]
 
     hashMax = max(freq.values())
 
@@ -337,7 +343,7 @@ def get_top_ten_reused_hashes(my_list):
     for x,y in sorted(freq.items(), key = lambda kv:(kv[1], kv[0]), reverse=True)[0:10]:
         stats.append([y,x])
 
-    return [stats, hashTotalDups, hashMax]
+    return [stats, hashTotalDups-blank_hash, hashMax]
 
 
 if __name__ == '__main__':
