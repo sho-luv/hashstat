@@ -146,7 +146,7 @@ def parse_ntds(ntds):
                 x = line.split(":")
                 ntds.usernames.append(x[0])
                 ntds.rids.append(x[1])
-                if x[2] != 'aad3b435b51404eeaad3b435b51404ee':
+                if x[2].lower() != 'aad3b435b51404eeaad3b435b51404ee':
                     ntds.lm_hashes.append(x[2])
                 ntds.nt_hashes.append(x[3])
                 # t.ly/YmZgE
@@ -198,8 +198,8 @@ def print_ntds_stats(ntds):
             lm_total += [s1]
             lm_total += [s2]
             myset = set(lm_total)
-            #myset.remove("aad3b435b51404ee")
-            myset = set(ntds.lm_hashes)
+            # .discard() only removed if value exist vs .remove() which rasies error
+            myset.discard("aad3b435b51404ee") 
 
         # Printing output
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
@@ -258,7 +258,7 @@ def cracked_hash_stats(hashes, type_hash, filename):
 
     # if lm hashes delete empty lm hashes
     if type_hash == "lm":
-        john_cracked = [ x for x in john_cracked if 'aad3b435b51404eeaad3b435b51404ee' not in x ]
+        john_cracked = [ x for x in john_cracked if 'aad3b435b51404eeaad3b435b51404ee' not in x.lower() ]
 
     # create lists of domains, passwords, and dups from list of
     # stings that look like this: "domain\user:pass:id:lm:nt:::"
@@ -307,7 +307,7 @@ def cracked_hash_stats(hashes, type_hash, filename):
 def print_top_ten(my_list, total):
     for x,y in my_list:
         percentage = (float(x) / total)
-        if y == ""or y == "31d6cfe0d16ae931b73c59d7e0c089c0":
+        if y == ""or y.lower() == "31d6cfe0d16ae931b73c59d7e0c089c0":
             y = "*BLANK HASH*"
         print(YELLOW,y,"=",x,"("+"{:.2%}".format(percentage)+")",NOCOLOR)
     print()
@@ -315,19 +315,20 @@ def print_top_ten(my_list, total):
 def get_top_ten_reused_hashes(my_list): 
     freq = {}   # unordered, no dups set of items
     stats = []
+
+    # count the number of dups in my_list list
     for item in my_list:
         if (item in freq):
             freq[item] += 1
         else:
             freq[item] = 1
 
-    freq = {key:val for key, val in freq.items() if val != 1}
+    hashTotalDups = 0
 
-    # working leon
-    # print(type(freq)) # error checking
-    # print("my_list value:", my_list)
+    for x in freq.values():
+        if x != 1:
+            hashTotalDups += x
 
-    hashTotal = sum(freq.values())
     hashMax = max(freq.values())
 
     # freq = {'f0c99bb71ee888f1ebade3ec1090c5f0': 1, '93f6796100b7773d1d71060d896b7a46': 1, '82175fce03b77644417eaf50cfac29c3': 1}
@@ -336,7 +337,7 @@ def get_top_ten_reused_hashes(my_list):
     for x,y in sorted(freq.items(), key = lambda kv:(kv[1], kv[0]), reverse=True)[0:10]:
         stats.append([y,x])
 
-    return [stats, hashTotal, hashMax]
+    return [stats, hashTotalDups, hashMax]
 
 
 if __name__ == '__main__':
