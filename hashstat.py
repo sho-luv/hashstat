@@ -200,6 +200,7 @@ def print_ntds_stats(ntds):
             myset = set(lm_total)
             # .discard() only removed if value exist vs .remove() which rasies error
             myset.discard("aad3b435b51404ee") 
+            myset.discard("AAD3B435B51404EE") 
 
         # Printing output
         print(LIGHTGREEN+"[+] "+NOCOLOR,end='')
@@ -335,6 +336,9 @@ def get_top_ten_reused_hashes(my_list):
                 blank_hash += freq[key]
             hashTotalDups += freq[key]
 
+    # 31d6cfe0d16ae931b73c59d7e0c089c0
+    freq.pop("31d6cfe0d16ae931b73c59d7e0c089c0", None)
+    freq.pop("31D6CFE0D16AE931B73C59D7E0C089C0", None)
     hashMax = max(freq.values())
 
     # freq = {'f0c99bb71ee888f1ebade3ec1090c5f0': 1, '93f6796100b7773d1d71060d896b7a46': 1, '82175fce03b77644417eaf50cfac29c3': 1}
