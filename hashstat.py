@@ -369,6 +369,11 @@ def get_top_ten_reused_hashes(my_list):
     # 31d6cfe0d16ae931b73c59d7e0c089c0
     freq.pop("31d6cfe0d16ae931b73c59d7e0c089c0", None)
     freq.pop("31D6CFE0D16AE931B73C59D7E0C089C0", None)
+
+    # If freq is empty, return some default value
+    if not freq:
+        return [[], 0, 0]  # Just an example, adjust this as needed
+
     hashMax = max(freq.values())
 
     for x,y in sorted(freq.items(), key = lambda kv:(kv[1], kv[0]), reverse=True)[0:10]:
