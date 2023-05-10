@@ -87,6 +87,8 @@ parser.add_argument("-c", "--cracked", action='store_true', help='show top ten')
 parser.add_argument("-lm", action='store_true', help='show top ten')
 parser.add_argument("-nt", action='store_true', help='show top ten')
 parser.add_argument("-e", action='store_true', help='show identical user/pass')
+parser.add_argument('-m', '--matching', action='store_true', help='Find accounts where username equals password')
+
 
 #group = parser.add_mutually_exclusive_group()
 group = parser.add_argument_group('Additional options')
@@ -130,6 +132,7 @@ def main():
     my_ntds.filename = options.ntds
     my_ntds.lm = options.lm
     my_ntds.nt = options.nt
+    matching = options.matching
 
 
     # try to open file with hashes
@@ -149,7 +152,7 @@ def main():
     print(CYAN+"\nThe are the statistics based on the pwdump file"+NOCOLOR)
     print(CYAN+"These statistics exclude machine accounts."+NOCOLOR)
     print(CYAN,my_ntds.machine_accounts, "machine accounts were removed from these stats."+NOCOLOR)
-    print_ntds_stats(my_ntds)
+    print_ntds_stats(my_ntds, matching)
 
 def parse_ntds(ntds):
     for line in ntds.file_data:
@@ -222,7 +225,7 @@ def print_lm_top_ten(ntds):
     print(YELLOW+"-------------------------------------------------"+NOCOLOR)
     print_top_ten(ntds.lm_stats, len(ntds.lm_hashes))
 
-def print_ntds_stats(ntds):
+def print_ntds_stats(ntds, matching):
 
     # NT Password Hashes Breakdown #==================================================
     if ntds.nt == True:
@@ -233,7 +236,7 @@ def print_ntds_stats(ntds):
                 print_nt_top_ten(ntds)
 
             if ntds.top_cracked:
-                cracked_hash_stats(ntds.nt_hashes,"nt",ntds.filename, ntds.nt_hashes)
+                cracked_hash_stats(ntds.nt_hashes,"nt",ntds.filename, ntds.nt_hashes, matching)
 
     # LM Password Hashes Breakdown #==================================================
     if ntds.lm == True:
@@ -244,7 +247,7 @@ def print_ntds_stats(ntds):
                 print_lm_top_ten(ntds)
 
             if ntds.top_cracked:
-                cracked_hash_stats(ntds.lm_hashes,"lm",ntds.filename,ntds.lm_count)
+                cracked_hash_stats(ntds.lm_hashes,"lm",ntds.filename,ntds.lm_count, matching)
         else:
             print(LIGHTGREEN+"[+] "+NOCOLOR, end = '')
             print("Found no LM hashes in this file\n")
@@ -262,12 +265,12 @@ def get_lm_count(ntds):
                 if value == 'aad3b435b51404ee':
                     ntds.lm_count.remove('aad3b435b51404ee')
 
-def cracked_hash_stats(hashes, type_hash, filename, hash_total):
+def cracked_hash_stats(hashes, type_hash, filename, hash_total, matching):
 
     john_cracked = []
     domains = []
     passwords = []
-    dups = []
+    matches = []
     hash_format = "--format="+type_hash
 
     process_john = subprocess.check_output(['john', '--show', hash_format, filename])
@@ -282,7 +285,7 @@ def cracked_hash_stats(hashes, type_hash, filename, hash_total):
     if type_hash == "lm":
         john_cracked = [ x for x in john_cracked if 'aad3b435b51404eeaad3b435b51404ee' not in x.lower() ]
 
-    # create lists of domains, passwords, and dups from list of
+    # create lists of domains, passwords, and matches from list of
     # stings that look like this: "domain\user:pass:id:lm:nt:::"
     for item in john_cracked:
         # debugging
@@ -294,13 +297,13 @@ def cracked_hash_stats(hashes, type_hash, filename, hash_total):
                 print(item)
             passwords.append(password)
             if username.lower() == password.lower():
-                dups.append(username)
+                matches.append(username)
         else:
             domain,single_hash = item.split('\\', 1)
             username, password, rid, lm, nt = single_hash.split(':', 4)
             passwords.append(password)
             if username.lower() == password.lower():
-                dups.append(username)
+                matches.append(username)
 
             domains.append( domain.lower() )
 
@@ -316,15 +319,15 @@ def cracked_hash_stats(hashes, type_hash, filename, hash_total):
     print(RED,len(john_cracked),"({:.2%})".format(len(john_cracked)/len(hashes)),NOCOLOR)
     print(LIGHTGREEN+"[+] "+NOCOLOR, end = '')
     print(type_hash.upper(),"hashes with username equal to password:",end='')
-    print(RED,len(dups),NOCOLOR)
+    print(RED,len(matches),NOCOLOR)
     print(LIGHTGREEN+"[+] "+NOCOLOR, end = '')
     print("Unique number of domains found in ntds file:",end='')
     print(RED,len(domains),NOCOLOR)
-
    
-    print("\nDuplicated hashes (username equals password):")
-    for dup in dups:
-        print(dup)
+    if matching:
+       print("\nAccounts where username equals password:")
+       for account in matches:
+         print(account)
 
     # print cracked top ten stats
     print()
